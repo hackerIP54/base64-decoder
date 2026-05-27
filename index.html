@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Base64 Hash URL</title>
+
+<style>
+body{
+    background:#111;
+    color:white;
+    font-family:Arial;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    height:100vh;
+    margin:0;
+}
+
+.box{
+    background:#1b1b1b;
+    padding:20px;
+    border-radius:12px;
+    width:90%;
+    max-width:600px;
+}
+
+textarea{
+    width:100%;
+    height:180px;
+    background:#222;
+    border:none;
+    color:white;
+    padding:10px;
+    border-radius:8px;
+    resize:vertical;
+    margin-top:10px;
+}
+
+button{
+    width:100%;
+    padding:12px;
+    margin-top:10px;
+    border:none;
+    border-radius:8px;
+    background:#00aa55;
+    color:white;
+    font-size:16px;
+    cursor:pointer;
+}
+
+button:hover{
+    opacity:0.9;
+}
+
+.result{
+    margin-top:15px;
+    word-break:break-all;
+    background:#222;
+    padding:10px;
+    border-radius:8px;
+}
+</style>
+</head>
+<body>
+
+<div class="box">
+    <h2>Base64 → URL Hash</h2>
+
+    <textarea id="input" placeholder="Base64 hier einfügen..."></textarea>
+
+    <button onclick="generate()">Hash generieren</button>
+
+    <div class="result" id="result"></div>
+</div>
+
+<script>
+async function sha256(text){
+    const encoder = new TextEncoder();
+    const data = encoder.encode(text);
+
+    const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+
+    return hashArray
+        .map(b => b.toString(16).padStart(2, "0"))
+        .join("");
+}
+
+async function generate(){
+    const base64 = document.getElementById("input").value.trim();
+
+    if(!base64){
+        alert("Bitte Base64 eingeben");
+        return;
+    }
+
+    const hash = await sha256(base64);
+
+    const newURL = window.location.origin + "/" + hash + "/";
+
+    document.getElementById("result").innerHTML =
+        "<b>URL:</b><br>" + newURL;
+
+    history.pushState({}, "", "/" + hash + "/");
+}
+
+window.onload = () => {
+    const path = window.location.pathname;
+
+    if(path !== "/"){
+        document.getElementById("result").innerHTML =
+            "<b>Aktueller Hash:</b><br>" + path;
+    }
+};
+</script>
+
+</body>
+</html>
