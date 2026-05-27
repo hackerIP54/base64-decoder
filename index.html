@@ -3,117 +3,164 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Base64 Hash URL</title>
+<title>Base64 Siter</title>
 
 <style>
 body{
+    margin:0;
     background:#111;
     color:white;
-    font-family:Arial;
+    font-family:Arial,sans-serif;
     display:flex;
     justify-content:center;
     align-items:center;
-    height:100vh;
-    margin:0;
+    min-height:100vh;
 }
 
-.box{
+.container{
+    width:90%;
+    max-width:800px;
     background:#1b1b1b;
     padding:20px;
-    border-radius:12px;
-    width:90%;
-    max-width:600px;
+    border-radius:15px;
 }
 
 textarea{
     width:100%;
     height:180px;
-    background:#222;
-    border:none;
-    color:white;
+    background:#0d0d0d;
+    color:#00ff88;
+    border:1px solid #333;
+    border-radius:10px;
     padding:10px;
-    border-radius:8px;
-    resize:vertical;
-    margin-top:10px;
 }
 
 button{
     width:100%;
-    padding:12px;
     margin-top:10px;
+    padding:14px;
     border:none;
-    border-radius:8px;
-    background:#00aa55;
+    border-radius:10px;
+    background:#00aa66;
     color:white;
-    font-size:16px;
     cursor:pointer;
-}
-
-button:hover{
-    opacity:0.9;
 }
 
 .result{
     margin-top:15px;
-    word-break:break-all;
-    background:#222;
-    padding:10px;
-    border-radius:8px;
+    background:#101010;
+    padding:15px;
+    border-radius:10px;
+}
+
+img,audio,video,iframe{
+    width:100%;
+    margin-top:10px;
 }
 </style>
 </head>
 <body>
 
-<div class="box">
-    <h2>Base64 → URL Hash</h2>
+<div class="container">
 
-    <textarea id="input" placeholder="Base64 hier einfügen..."></textarea>
+<h2>Base64 + URL Detector</h2>
 
-    <button onclick="generate()">Hash generieren</button>
+<textarea id="input" placeholder="Base64 ODER URL einfügen..."></textarea>
 
-    <div class="result" id="result"></div>
+<button onclick="run()">Analysieren</button>
+
+<div class="result" id="result">Noch nichts.</div>
+
 </div>
 
 <script>
-async function sha256(text){
-    const encoder = new TextEncoder();
-    const data = encoder.encode(text);
 
-    const hashBuffer = await crypto.subtle.digest("SHA-256", data);
-
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-
-    return hashArray
-        .map(b => b.toString(16).padStart(2, "0"))
-        .join("");
+function isURL(text){
+    return text.startsWith("http://") || text.startsWith("https://");
 }
 
-async function generate(){
-    const base64 = document.getElementById("input").value.trim();
+async function run(){
 
-    if(!base64){
-        alert("Bitte Base64 eingeben");
+    const input = document.getElementById("input").value.trim();
+    const result = document.getElementById("result");
+    result.innerHTML = "";
+
+    if(!input){
+        result.innerHTML = "Nichts eingegeben.";
         return;
     }
 
-    const hash = await sha256(base64);
+    let data = input;
 
-    const newURL = window.location.origin + "/" + hash + "/";
+    // 🔥 FALL 1: URL → Inhalt holen
+    if(isURL(input)){
+        try{
+            result.innerHTML = "Lade URL...";
 
-    document.getElementById("result").innerHTML =
-        "<b>URL:</b><br>" + newURL;
+            const res = await fetch(input);
+            const text = await res.text();
 
-    history.pushState({}, "", "/" + hash + "/");
+            data = text;
+        } catch(e){
+            result.innerHTML = "Fehler beim Laden der URL (CORS möglich).";
+            return;
+        }
+    }
+
+    // 🔥 Base64 aus data:// entfernen
+    if(data.includes(",")){
+        data = data.split(",")[1];
+    }
+
+    let type = "Unbekannt";
+    let mime = "";
+
+    // Bilder
+    if(data.startsWith("iVBOR")){
+        type="PNG Bild"; mime="image/png";
+    }
+    else if(data.startsWith("/9j/")){
+        type="JPG Bild"; mime="image/jpeg";
+    }
+
+    // Audio
+    else if(data.startsWith("SUQz")){
+        type="MP3 Audio"; mime="audio/mpeg";
+    }
+    else if(data.startsWith("UklGR")){
+        type="WAV Audio"; mime="audio/wav";
+    }
+
+    // PDF
+    else if(data.startsWith("JVBER")){
+        type="PDF"; mime="application/pdf";
+    }
+
+    result.innerHTML = `<h3>Erkannt: ${type}</h3>`;
+
+    // Anzeige
+    if(mime.startsWith("image/")){
+        const img = document.createElement("img");
+        img.src = `data:${mime};base64,${data}`;
+        result.appendChild(img);
+    }
+    else if(mime.startsWith("audio/")){
+        const audio = document.createElement("audio");
+        audio.controls = true;
+        audio.src = `data:${mime};base64,${data}`;
+        result.appendChild(audio);
+    }
+    else if(mime === "application/pdf"){
+        const iframe = document.createElement("iframe");
+        iframe.height = "500";
+        iframe.src = `data:${mime};base64,${data}`;
+        result.appendChild(iframe);
+    }
+    else{
+        result.innerHTML += "<p>Kein Base64 oder unbekannt.</p>";
+    }
 }
 
-window.onload = () => {
-    const path = window.location.pathname;
-
-    if(path !== "/"){
-        document.getElementById("result").innerHTML =
-            "<b>Aktueller Hash:</b><br>" + path;
-    }
-};
 </script>
 
 </body>
