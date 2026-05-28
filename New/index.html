@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+
 <title>Universal Base64 Viewer</title>
 
 <style>
@@ -10,125 +11,269 @@
         margin:0;
         padding:0;
         box-sizing:border-box;
-        font-family:Arial, sans-serif;
     }
 
     body{
-        background:#111;
+        background:#0f172a;
         color:white;
-        padding:20px;
+        font-family:Inter, Arial, sans-serif;
+        min-height:100vh;
+        padding:40px 20px;
+        background:
+        radial-gradient(circle at top left,#1e293b 0%,#0f172a 45%),
+        radial-gradient(circle at bottom right,#111827 0%,#020617 55%);
+    }
+
+    .container{
+        max-width:1100px;
+        margin:auto;
+    }
+
+    .card{
+        background:rgba(15,23,42,0.75);
+        border:1px solid rgba(255,255,255,0.08);
+        backdrop-filter:blur(12px);
+        border-radius:24px;
+        padding:28px;
+        box-shadow:
+        0 10px 40px rgba(0,0,0,0.4),
+        inset 0 1px 0 rgba(255,255,255,0.04);
     }
 
     h1{
-        margin-bottom:20px;
         text-align:center;
+        font-size:38px;
+        margin-bottom:12px;
+        background:linear-gradient(90deg,#60a5fa,#a78bfa,#22d3ee);
+        -webkit-background-clip:text;
+        -webkit-text-fill-color:transparent;
+    }
+
+    .sub{
+        text-align:center;
+        color:#94a3b8;
+        margin-bottom:28px;
+        font-size:15px;
     }
 
     textarea{
         width:100%;
         height:220px;
-        background:#1e1e1e;
-        color:#fff;
-        border:2px solid #333;
-        border-radius:10px;
-        padding:15px;
+        background:#020617;
+        color:white;
+        border:1px solid rgba(255,255,255,0.08);
+        border-radius:18px;
+        padding:18px;
         resize:vertical;
-        font-size:14px;
+        font-size:15px;
+        outline:none;
+        transition:0.25s;
+    }
+
+    textarea:focus{
+        border-color:#60a5fa;
+        box-shadow:0 0 0 4px rgba(96,165,250,0.15);
     }
 
     .buttons{
         display:flex;
-        gap:10px;
-        margin-top:15px;
+        gap:14px;
         flex-wrap:wrap;
+        margin-top:20px;
     }
 
     button{
-        padding:12px 18px;
         border:none;
-        border-radius:8px;
-        background:#4f46e5;
-        color:white;
+        border-radius:14px;
+        padding:14px 22px;
         cursor:pointer;
-        font-weight:bold;
-        transition:0.2s;
+        font-weight:600;
+        transition:0.25s;
+        font-size:15px;
     }
 
-    button:hover{
-        background:#6366f1;
+    .primary{
+        background:linear-gradient(135deg,#3b82f6,#8b5cf6);
+        color:white;
+    }
+
+    .primary:hover{
+        transform:translateY(-2px);
+        box-shadow:0 8px 25px rgba(59,130,246,0.35);
+    }
+
+    .secondary{
+        background:#1e293b;
+        color:white;
+    }
+
+    .secondary:hover{
+        background:#334155;
     }
 
     .output{
-        margin-top:25px;
-        background:#1a1a1a;
-        border:2px solid #333;
-        border-radius:12px;
-        padding:20px;
-        min-height:150px;
-    }
-
-    img, video, audio, iframe{
-        max-width:100%;
-        border-radius:10px;
-        margin-top:10px;
-    }
-
-    pre{
-        white-space:pre-wrap;
-        word-break:break-word;
-        background:#000;
-        padding:15px;
-        border-radius:10px;
-        margin-top:10px;
+        margin-top:28px;
+        background:#020617;
+        border-radius:20px;
+        padding:24px;
+        min-height:220px;
+        border:1px solid rgba(255,255,255,0.06);
+        overflow:hidden;
     }
 
     .type{
-        color:#00ff99;
-        margin-bottom:10px;
-        font-weight:bold;
+        display:inline-flex;
+        align-items:center;
+        gap:8px;
+        background:rgba(59,130,246,0.12);
+        border:1px solid rgba(96,165,250,0.3);
+        color:#7dd3fc;
+        padding:8px 14px;
+        border-radius:999px;
+        font-size:14px;
+        margin-bottom:20px;
     }
 
-    a{
-        color:#4ea3ff;
+    img,
+    video,
+    iframe{
+        width:100%;
+        border:none;
+        border-radius:16px;
+        overflow:hidden;
+        background:black;
+    }
+
+    audio{
+        width:100%;
+        margin-top:10px;
+    }
+
+    .text-view{
+        background:#0f172a;
+        border-radius:14px;
+        padding:18px;
+        line-height:1.6;
+        white-space:pre-wrap;
+        word-break:break-word;
+        color:#e2e8f0;
+        border:1px solid rgba(255,255,255,0.06);
+    }
+
+    .empty{
+        display:flex;
+        justify-content:center;
+        align-items:center;
+        min-height:180px;
+        color:#64748b;
+        text-align:center;
+        font-size:16px;
+    }
+
+    .footer{
+        text-align:center;
+        color:#64748b;
+        margin-top:18px;
+        font-size:13px;
+    }
+
+    @media(max-width:700px){
+        h1{
+            font-size:30px;
+        }
+
+        .card{
+            padding:20px;
+        }
+
+        button{
+            width:100%;
+        }
     }
 </style>
 </head>
 <body>
 
-<h1>Universal Base64 / URI / RAW Viewer</h1>
+<div class="container">
 
-<textarea id="input" placeholder="Füge Base64, URI, URL oder Text ein..."></textarea>
+    <div class="card">
 
-<div class="buttons">
-    <button onclick="detectInput()">Erkennen</button>
-    <button onclick="encodeText()">Zu Base64 encoden</button>
-    <button onclick="clearAll()">Leeren</button>
-</div>
+        <h1>Universal Base64 Viewer</h1>
 
-<div class="output" id="output">
-    Ergebnis erscheint hier...
+        <div class="sub">
+            Erkennt automatisch Bilder, Videos, Audio, PDFs, URLs, URI Base64 und normalen Text
+        </div>
+
+        <textarea id="input"
+        placeholder="Base64, Data URI, URL oder Text hier einfügen..."></textarea>
+
+        <div class="buttons">
+            <button class="primary" onclick="detectInput()">
+                Erkennen
+            </button>
+
+            <button class="secondary" onclick="encodeText()">
+                Text → Base64
+            </button>
+
+            <button class="secondary" onclick="clearAll()">
+                Leeren
+            </button>
+        </div>
+
+        <div class="output" id="output">
+            <div class="empty">
+                Noch keine Daten analysiert
+            </div>
+        </div>
+
+        <div class="footer">
+            Unterstützt Raw Base64, Data URI, URLs, Bilder, Videos, Audio & mehr
+        </div>
+
+    </div>
+
 </div>
 
 <script>
+
 const output = document.getElementById("output");
 
 function clearAll(){
     document.getElementById("input").value = "";
-    output.innerHTML = "Ergebnis erscheint hier...";
+
+    output.innerHTML = `
+        <div class="empty">
+            Noch keine Daten analysiert
+        </div>
+    `;
 }
 
 function encodeText(){
-    const text = document.getElementById("input").value;
+    const text = document.getElementById("input").value.trim();
+
+    if(!text){
+        return;
+    }
 
     try{
         const encoded = btoa(unescape(encodeURIComponent(text)));
 
         output.innerHTML = `
-            <div class="type">Text → Base64</div>
-            <pre>${encoded}</pre>
+            <div class="type">
+                Text erfolgreich encodet
+            </div>
+
+            <div class="text-view">
+                ${escapeHtml(encoded)}
+            </div>
         `;
-    }catch(err){
-        output.innerHTML = `<div class="type">Fehler beim Encoden</div>`;
+    }catch{
+        output.innerHTML = `
+            <div class="type">
+                Fehler beim Encoden
+            </div>
+        `;
     }
 }
 
@@ -146,22 +291,36 @@ function looksLikeBase64(str){
 
     if(str.startsWith("data:")) return true;
 
-    return /^[A-Za-z0-9+/=\s]+$/.test(str) && str.length > 20;
+    return /^[A-Za-z0-9+/=\s]+$/.test(str) && str.length > 30;
 }
 
-function detectMimeFromBase64(base64){
-    if(base64.startsWith("/9j/")) return "image/jpeg";
-    if(base64.startsWith("iVBOR")) return "image/png";
-    if(base64.startsWith("R0lGOD")) return "image/gif";
-    if(base64.startsWith("UklGR")) return "audio/wav";
-    if(base64.startsWith("SUQz")) return "audio/mp3";
-    if(base64.startsWith("AAAAFGZ0")) return "video/mp4";
-    if(base64.startsWith("JVBER")) return "application/pdf";
+function detectMime(base64){
+
+    if(base64.startsWith("/9j/"))
+        return "image/jpeg";
+
+    if(base64.startsWith("iVBOR"))
+        return "image/png";
+
+    if(base64.startsWith("R0lGOD"))
+        return "image/gif";
+
+    if(base64.startsWith("UklGR"))
+        return "audio/wav";
+
+    if(base64.startsWith("SUQz"))
+        return "audio/mp3";
+
+    if(base64.startsWith("AAAAFGZ0"))
+        return "video/mp4";
+
+    if(base64.startsWith("JVBER"))
+        return "application/pdf";
 
     return "text/plain";
 }
 
-function tryDecodeBase64(base64){
+function decodeBase64(base64){
     try{
         return decodeURIComponent(escape(atob(base64)));
     }catch{
@@ -170,124 +329,189 @@ function tryDecodeBase64(base64){
 }
 
 function detectInput(){
+
     let input = document.getElementById("input").value.trim();
 
     if(!input){
-        output.innerHTML = "Bitte etwas eingeben.";
         return;
     }
 
-    // URL erkennen
+    // URL
     if(isURL(input)){
+
         const lower = input.toLowerCase();
 
         if(lower.match(/\.(jpg|jpeg|png|gif|webp)$/)){
+
             output.innerHTML = `
-                <div class="type">Bild URL erkannt</div>
+                <div class="type">
+                    Bild URL erkannt
+                </div>
+
                 <img src="${input}">
             `;
+
             return;
         }
 
         if(lower.match(/\.(mp4|webm|ogg)$/)){
+
             output.innerHTML = `
-                <div class="type">Video URL erkannt</div>
+                <div class="type">
+                    Video URL erkannt
+                </div>
+
                 <video controls src="${input}"></video>
             `;
+
             return;
         }
 
         if(lower.match(/\.(mp3|wav|ogg)$/)){
+
             output.innerHTML = `
-                <div class="type">Audio URL erkannt</div>
+                <div class="type">
+                    Audio URL erkannt
+                </div>
+
                 <audio controls src="${input}"></audio>
             `;
+
             return;
         }
 
         output.innerHTML = `
-            <div class="type">URL erkannt</div>
-            <a href="${input}" target="_blank">${input}</a>
-            <iframe src="${input}" width="100%" height="500"></iframe>
+            <div class="type">
+                Webseite erkannt
+            </div>
+
+            <iframe src="${input}" height="600"></iframe>
         `;
+
         return;
     }
 
-    // Data URI
+    // DATA URI
     if(input.startsWith("data:")){
+
         const mimeMatch = input.match(/^data:(.*?);base64,/);
 
-        const mime = mimeMatch ? mimeMatch[1] : "unknown";
+        const mime = mimeMatch
+            ? mimeMatch[1]
+            : "text/plain";
 
-        renderByMime(input, mime);
+        renderByMime(input,mime);
+
         return;
     }
 
-    // Base64
+    // RAW BASE64
     if(looksLikeBase64(input)){
-        input = input.replace(/\s/g, "");
 
-        const mime = detectMimeFromBase64(input);
-        const dataUri = `data:${mime};base64,${input}`;
+        input = input.replace(/\s/g,"");
 
-        renderByMime(dataUri, mime, input);
+        const mime = detectMime(input);
+
+        const dataUri =
+        `data:${mime};base64,${input}`;
+
+        renderByMime(dataUri,mime,input);
+
         return;
     }
 
-    // Text
+    // TEXT
     output.innerHTML = `
-        <div class="type">Normaler Text erkannt</div>
-        <pre>${escapeHtml(input)}</pre>
+        <div class="type">
+            Text erkannt
+        </div>
+
+        <div class="text-view">
+            ${escapeHtml(input)}
+        </div>
     `;
 }
 
-function renderByMime(dataUri, mime, rawBase64 = ""){
+function renderByMime(dataUri,mime,raw=""){
+
+    // Bild
     if(mime.startsWith("image/")){
+
         output.innerHTML = `
-            <div class="type">Bild erkannt (${mime})</div>
+            <div class="type">
+                Bild erkannt (${mime})
+            </div>
+
             <img src="${dataUri}">
         `;
+
         return;
     }
 
+    // Video
     if(mime.startsWith("video/")){
+
         output.innerHTML = `
-            <div class="type">Video erkannt (${mime})</div>
+            <div class="type">
+                Video erkannt (${mime})
+            </div>
+
             <video controls src="${dataUri}"></video>
         `;
+
         return;
     }
 
+    // Audio
     if(mime.startsWith("audio/")){
+
         output.innerHTML = `
-            <div class="type">Audio erkannt (${mime})</div>
+            <div class="type">
+                Audio erkannt (${mime})
+            </div>
+
             <audio controls src="${dataUri}"></audio>
         `;
+
         return;
     }
 
+    // PDF
     if(mime === "application/pdf"){
+
         output.innerHTML = `
-            <div class="type">PDF erkannt</div>
-            <iframe src="${dataUri}" width="100%" height="600"></iframe>
+            <div class="type">
+                PDF erkannt
+            </div>
+
+            <iframe src="${dataUri}" height="700"></iframe>
         `;
+
         return;
     }
 
-    const decoded = tryDecodeBase64(rawBase64);
+    // Text Base64
+    const decoded = decodeBase64(raw);
 
     output.innerHTML = `
-        <div class="type">Text/Base64 erkannt</div>
-        <pre>${escapeHtml(decoded || "Nicht dekodierbar")}</pre>
+        <div class="type">
+            Base64 Text erkannt
+        </div>
+
+        <div class="text-view">
+            ${escapeHtml(decoded || "Text konnte nicht dekodiert werden")}
+        </div>
     `;
 }
 
 function escapeHtml(text){
+
     return text
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;");
+        .replace(/&/g,"&amp;")
+        .replace(/</g,"&lt;")
+        .replace(/>/g,"&gt;");
 }
+
 </script>
 
 </body>
