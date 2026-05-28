@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Universal Base64 Viewer</title>
+
+<style>
+    *{
+        margin:0;
+        padding:0;
+        box-sizing:border-box;
+        font-family:Arial, sans-serif;
+    }
+
+    body{
+        background:#111;
+        color:white;
+        padding:20px;
+    }
+
+    h1{
+        margin-bottom:20px;
+        text-align:center;
+    }
+
+    textarea{
+        width:100%;
+        height:220px;
+        background:#1e1e1e;
+        color:#fff;
+        border:2px solid #333;
+        border-radius:10px;
+        padding:15px;
+        resize:vertical;
+        font-size:14px;
+    }
+
+    .buttons{
+        display:flex;
+        gap:10px;
+        margin-top:15px;
+        flex-wrap:wrap;
+    }
+
+    button{
+        padding:12px 18px;
+        border:none;
+        border-radius:8px;
+        background:#4f46e5;
+        color:white;
+        cursor:pointer;
+        font-weight:bold;
+        transition:0.2s;
+    }
+
+    button:hover{
+        background:#6366f1;
+    }
+
+    .output{
+        margin-top:25px;
+        background:#1a1a1a;
+        border:2px solid #333;
+        border-radius:12px;
+        padding:20px;
+        min-height:150px;
+    }
+
+    img, video, audio, iframe{
+        max-width:100%;
+        border-radius:10px;
+        margin-top:10px;
+    }
+
+    pre{
+        white-space:pre-wrap;
+        word-break:break-word;
+        background:#000;
+        padding:15px;
+        border-radius:10px;
+        margin-top:10px;
+    }
+
+    .type{
+        color:#00ff99;
+        margin-bottom:10px;
+        font-weight:bold;
+    }
+
+    a{
+        color:#4ea3ff;
+    }
+</style>
+</head>
+<body>
+
+<h1>Universal Base64 / URI / RAW Viewer</h1>
+
+<textarea id="input" placeholder="Füge Base64, URI, URL oder Text ein..."></textarea>
+
+<div class="buttons">
+    <button onclick="detectInput()">Erkennen</button>
+    <button onclick="encodeText()">Zu Base64 encoden</button>
+    <button onclick="clearAll()">Leeren</button>
+</div>
+
+<div class="output" id="output">
+    Ergebnis erscheint hier...
+</div>
+
+<script>
+const output = document.getElementById("output");
+
+function clearAll(){
+    document.getElementById("input").value = "";
+    output.innerHTML = "Ergebnis erscheint hier...";
+}
+
+function encodeText(){
+    const text = document.getElementById("input").value;
+
+    try{
+        const encoded = btoa(unescape(encodeURIComponent(text)));
+
+        output.innerHTML = `
+            <div class="type">Text → Base64</div>
+            <pre>${encoded}</pre>
+        `;
+    }catch(err){
+        output.innerHTML = `<div class="type">Fehler beim Encoden</div>`;
+    }
+}
+
+function isURL(str){
+    try{
+        new URL(str);
+        return true;
+    }catch{
+        return false;
+    }
+}
+
+function looksLikeBase64(str){
+    str = str.trim();
+
+    if(str.startsWith("data:")) return true;
+
+    return /^[A-Za-z0-9+/=\s]+$/.test(str) && str.length > 20;
+}
+
+function detectMimeFromBase64(base64){
+    if(base64.startsWith("/9j/")) return "image/jpeg";
+    if(base64.startsWith("iVBOR")) return "image/png";
+    if(base64.startsWith("R0lGOD")) return "image/gif";
+    if(base64.startsWith("UklGR")) return "audio/wav";
+    if(base64.startsWith("SUQz")) return "audio/mp3";
+    if(base64.startsWith("AAAAFGZ0")) return "video/mp4";
+    if(base64.startsWith("JVBER")) return "application/pdf";
+
+    return "text/plain";
+}
+
+function tryDecodeBase64(base64){
+    try{
+        return decodeURIComponent(escape(atob(base64)));
+    }catch{
+        return null;
+    }
+}
+
+function detectInput(){
+    let input = document.getElementById("input").value.trim();
+
+    if(!input){
+        output.innerHTML = "Bitte etwas eingeben.";
+        return;
+    }
+
+    // URL erkennen
+    if(isURL(input)){
+        const lower = input.toLowerCase();
+
+        if(lower.match(/\.(jpg|jpeg|png|gif|webp)$/)){
+            output.innerHTML = `
+                <div class="type">Bild URL erkannt</div>
+                <img src="${input}">
+            `;
+            return;
+        }
+
+        if(lower.match(/\.(mp4|webm|ogg)$/)){
+            output.innerHTML = `
+                <div class="type">Video URL erkannt</div>
+                <video controls src="${input}"></video>
+            `;
+            return;
+        }
+
+        if(lower.match(/\.(mp3|wav|ogg)$/)){
+            output.innerHTML = `
+                <div class="type">Audio URL erkannt</div>
+                <audio controls src="${input}"></audio>
+            `;
+            return;
+        }
+
+        output.innerHTML = `
+            <div class="type">URL erkannt</div>
+            <a href="${input}" target="_blank">${input}</a>
+            <iframe src="${input}" width="100%" height="500"></iframe>
+        `;
+        return;
+    }
+
+    // Data URI
+    if(input.startsWith("data:")){
+        const mimeMatch = input.match(/^data:(.*?);base64,/);
+
+        const mime = mimeMatch ? mimeMatch[1] : "unknown";
+
+        renderByMime(input, mime);
+        return;
+    }
+
+    // Base64
+    if(looksLikeBase64(input)){
+        input = input.replace(/\s/g, "");
+
+        const mime = detectMimeFromBase64(input);
+        const dataUri = `data:${mime};base64,${input}`;
+
+        renderByMime(dataUri, mime, input);
+        return;
+    }
+
+    // Text
+    output.innerHTML = `
+        <div class="type">Normaler Text erkannt</div>
+        <pre>${escapeHtml(input)}</pre>
+    `;
+}
+
+function renderByMime(dataUri, mime, rawBase64 = ""){
+    if(mime.startsWith("image/")){
+        output.innerHTML = `
+            <div class="type">Bild erkannt (${mime})</div>
+            <img src="${dataUri}">
+        `;
+        return;
+    }
+
+    if(mime.startsWith("video/")){
+        output.innerHTML = `
+            <div class="type">Video erkannt (${mime})</div>
+            <video controls src="${dataUri}"></video>
+        `;
+        return;
+    }
+
+    if(mime.startsWith("audio/")){
+        output.innerHTML = `
+            <div class="type">Audio erkannt (${mime})</div>
+            <audio controls src="${dataUri}"></audio>
+        `;
+        return;
+    }
+
+    if(mime === "application/pdf"){
+        output.innerHTML = `
+            <div class="type">PDF erkannt</div>
+            <iframe src="${dataUri}" width="100%" height="600"></iframe>
+        `;
+        return;
+    }
+
+    const decoded = tryDecodeBase64(rawBase64);
+
+    output.innerHTML = `
+        <div class="type">Text/Base64 erkannt</div>
+        <pre>${escapeHtml(decoded || "Nicht dekodierbar")}</pre>
+    `;
+}
+
+function escapeHtml(text){
+    return text
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
+}
+</script>
+
+</body>
+</html>
